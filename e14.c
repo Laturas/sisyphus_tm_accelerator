@@ -1,14 +1,15 @@
 #include <stdio.h>
 #include <assert.h>
 #include <gmp.h>
-#include <stdlib.h>
+#include <stdlib.h> // Only for the exit(0) function
 
 mpz_t base_p3t;
 mpz_t p3t;
 
 size_t maxe = 0;
 
-// Prints out a as long as it has less than max_digits
+/// Prints out a as long as it has less than max_digits
+/// Otherwise prints the value mod 256
 void safeprint(mpz_t a, size_t max_digits) {
     size_t alog10 = mpz_sizeinbase(a, 10) - 1;
 
@@ -25,8 +26,6 @@ void safeprint(mpz_t a, size_t max_digits) {
 
 /// Handles the values near the base cases
 void single(mpz_t a, mpz_t b) {
-    // gmp_printf("b = %Zd\n", b);
-
     assert(mpz_cmp_ui(b, sizeof(size_t) * 8) <= 0);
     size_t bi = mpz_get_ui(b);
 
@@ -81,10 +80,7 @@ void single(mpz_t a, mpz_t b) {
             }
         } break;
         default: {
-            // 2n -> 3n
-            // 2n + 1 -> 3n + 1
-            // 2n/2 * 3 = 3n
-            // 2n+1/2 *3 = 
+            // This is the normal iteration.
             mpz_mul_ui(a, a, 3);
             mpz_div_2exp(a, a, 1);
             mpz_sub_ui(b, b, 4);
@@ -159,6 +155,7 @@ void accel_pow(mpz_t a, mpz_t b, size_t e) {
 void next_reset(mpz_t a, mpz_t b) {
     maxe = 0;
     // t is the maximum amount of steps that direct() can be simulated without danger of b going negative.
+    // In this case we can calculate it exactly, because b decreases by a consistent amount!
     mpz_init(p3t);
     mpz_init(base_p3t);
     mpz_mul_2exp(base_p3t, base_p3t, 6);
@@ -166,7 +163,6 @@ void next_reset(mpz_t a, mpz_t b) {
     mpz_t t;
     mpz_init_set(t, b);
     mpz_div_2exp(t, t, 2); // t = (b) / 4
-    // gmp_printf("t = %Zd\n", t);
 
     while (mpz_cmp_ui(t, 0) > 0) { // loops until t == 0
         // e = floor(log_2(t))
@@ -187,6 +183,8 @@ void next_reset(mpz_t a, mpz_t b) {
     }
 }
 
+// Linux specific behavior. You can get rid of this as long as you remove the timing information.
+// There's something equivalent on Windows
 #include <sys/time.h>
 
 int sim(int init_a, int init_b) {
@@ -210,7 +208,5 @@ int sim(int init_a, int init_b) {
 }
 
 int main(int argc, char* argv[]) {
-    mpz_t test_1;
     sim(10,1);
-
 }
