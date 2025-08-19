@@ -117,12 +117,15 @@ void accel_pow(mpz_t a, mpz_t b, size_t e) {
 
     // Get last 2^{e-1} bits of a
     // Unless I'm stupid this should be equivalent
-    mpz_t a_1;
-    mpz_init(a_1);
+    mpz_t a_1; mpz_init(a_1);
+    // mpz_t lh; mpz_init(lh);
+    // mpz_t uh; mpz_init(uh);
+    
     size_t t = 1 << (e - 1);
     mpz_mod_2exp(a_1, a, t); // a&m
+    mpz_div_2exp(a, a, t);
 
-    accel_pow(a_1, b, e - 1);
+    accel_pow(a_1, b, e - 1); // a mod 2^t
     if (e > maxe) {
         maxe = e;
         printf("Current e = %ld\r", maxe); fflush(stdout);
@@ -131,20 +134,25 @@ void accel_pow(mpz_t a, mpz_t b, size_t e) {
     mpz_mul(p3t, p3t, p3t);
     mpz_mod_2exp(p3t, p3t, (mpz_get_ui(b) / 4) + 1);
 
-    mpz_div_2exp(a, a, t); // a = a >> t
-    mpz_mul(a, a, p3t); // a = (a >> t) * p3t
-    mpz_add(a, a, a_1); // a = (a >> t) * p3t + a_1
+    // a mod 2^t
+    // a mod 2^t
+    // (a)  (a_1)
+    // (a) * p3t  (a_1) does its stuff
+    // actually this makes sense, at the end of it a_1 will just be bits that overlap with a
+    // mpz_div_2exp(a, a, t); // a = a >> t
+    mpz_mul(a, a, p3t);    // a = (a >> t) * p3t
+    mpz_add(a, a, a_1);    // a = (a >> t) * p3t + a_1
     mpz_mod_2exp(a, a, (mpz_get_ui(b) / 4) + 1);
 
     mpz_mod_2exp(a_1, a, t); // a&m
+    mpz_div_2exp(a, a, t); // a = a >> t
     accel_pow(a_1, b, e - 1);
 
     mpz_mul(p3t, p3t, p3t);
     mpz_mod_2exp(p3t, p3t, (mpz_get_ui(b) / 4) + 1);
 
-    mpz_div_2exp(a, a, t);
-    mpz_mul(a, a, p3t);
-    mpz_add(a, a, a_1);
+    mpz_mul(a, a, p3t);    // a = (a >> t) * p3t
+    mpz_add(a, a, a_1);    // a = (a >> t) * p3t + a_1
     mpz_mod_2exp(a, a, (mpz_get_ui(b) / 4) + 1);
 
     mpz_clear(a_1);
